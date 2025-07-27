@@ -1,0 +1,57 @@
+name: Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        required: true
+        type: environment
+        description: Target environment
+      confirmation:
+        required: true
+        type: boolean
+        description: Confirm destruction of resources
+        default: false
+
+env:
+  PROJECT: crypto-price-prediction
+  ROLE_NAME: tf-deploy-role
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    if: ${{ inputs.confirmation == true }}
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">=1.10.1 <1.11"
+
+      - name: Configure credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
+          role-session-name: GitHub_to_AWS_via_Federated_OIDC
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Terraform Destroy
+        run: |
+          echo "Initializing terraform backend..."
+          terraform -chdir=infra init \
+            -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET }}" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="key=${{ env.PROJECT }}/${{ inputs.environment }}/terraform.tfstate" \
+            -backend-config="use_lockfile=true"
+
+          echo "Executing terraform plan -destroy..."
+          terraform -chdir=infra plan -destroy -out=tfplan
+
+          echo "Executing terraform apply (destroy)..."
+          terraform -chdir=infra apply -auto-approve tfplan

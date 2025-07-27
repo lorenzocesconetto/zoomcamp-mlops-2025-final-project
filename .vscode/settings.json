@@ -1,0 +1,15 @@
+{
+  "black-formatter.args": ["--line-length=99"],
+  "flake8.args": ["--max-line-length=99"],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
+}

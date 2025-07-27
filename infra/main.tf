@@ -71,7 +71,7 @@ module "model_training" {
   processed_data_bucket_name   = module.shared_resources.processed_data_bucket_name
   model_artifacts_bucket_name  = module.shared_resources.model_artifacts_bucket_name
   pipeline_code_bucket_name    = module.shared_resources.pipeline_code_bucket_name
-  experiment_name              = module.model_tracking.experiment_name
+  experiment_name              = local.experiment_name
   model_package_group_name     = module.model_tracking.model_package_group_name
   training_instance_type       = var.training_instance_type
   processing_instance_type     = var.processing_instance_type

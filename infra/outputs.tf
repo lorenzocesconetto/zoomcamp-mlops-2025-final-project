@@ -30,11 +30,6 @@ output "sagemaker_pipeline_role_arn" {
 }
 
 # Model Tracking Outputs
-output "experiment_name" {
-  description = "Name of the SageMaker experiment"
-  value       = module.model_tracking.experiment_name
-}
-
 output "model_package_group_name" {
   description = "Name of the SageMaker model package group"
   value       = module.model_tracking.model_package_group_name

@@ -96,10 +96,6 @@ resource "aws_lambda_function" "blue_green_deployment" {
       MODEL_PACKAGE_GROUP_NAME = var.model_package_group_name
     }
   }
-
-  tags = merge(var.tags, {
-    Purpose = "Blue/Green deployment automation"
-  })
 }
 
 # IAM role for Lambda function
@@ -118,8 +114,6 @@ resource "aws_iam_role" "lambda_execution_role" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 # IAM policy for Lambda function
@@ -166,8 +160,6 @@ resource "aws_iam_policy" "lambda_sagemaker_policy" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_sagemaker_policy" {

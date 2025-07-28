@@ -3,9 +3,6 @@
 ##############################################################
 resource "aws_s3_bucket" "raw_data" {
   bucket = "${var.project_name}-${var.environment}-raw-data"
-  tags = merge(var.tags, {
-    Purpose = "Raw OHLCV data storage"
-  })
 }
 
 resource "aws_s3_bucket_versioning" "raw_data" {
@@ -20,9 +17,6 @@ resource "aws_s3_bucket_versioning" "raw_data" {
 ##############################################################
 resource "aws_s3_bucket" "processed_data" {
   bucket = "${var.project_name}-${var.environment}-processed-data"
-  tags = merge(var.tags, {
-    Purpose = "Processed and feature-engineered data"
-  })
 }
 
 resource "aws_s3_bucket_versioning" "processed_data" {
@@ -37,9 +31,6 @@ resource "aws_s3_bucket_versioning" "processed_data" {
 ##############################################################
 resource "aws_s3_bucket" "model_artifacts" {
   bucket = "${var.project_name}-${var.environment}-model-artifacts"
-  tags = merge(var.tags, {
-    Purpose = "Model artifacts and trained models"
-  })
 }
 
 resource "aws_s3_bucket_versioning" "model_artifacts" {
@@ -54,9 +45,6 @@ resource "aws_s3_bucket_versioning" "model_artifacts" {
 ##############################################################
 resource "aws_s3_bucket" "pipeline_code" {
   bucket = "${var.project_name}-${var.environment}-pipeline-code"
-  tags = merge(var.tags, {
-    Purpose = "SageMaker pipeline source code"
-  })
 }
 
 resource "aws_s3_bucket_versioning" "pipeline_code" {

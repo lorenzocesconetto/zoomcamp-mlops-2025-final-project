@@ -78,12 +78,9 @@ resource "aws_cloudwatch_metric_alarm" "model_accuracy_alarm" {
   threshold           = "0.6"
   alarm_description   = "This metric monitors model accuracy"
   alarm_actions       = [aws_sns_topic.ml_alerts.arn]
-
-  tags = var.tags
 }
 
 # SNS topic for ML pipeline alerts
 resource "aws_sns_topic" "ml_alerts" {
   name = "${var.project_name}-${var.environment}-ml-alerts"
-  tags = var.tags
 }

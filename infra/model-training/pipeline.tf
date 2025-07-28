@@ -244,9 +244,4 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
       }
     ]
   })
-
-  tags = merge(var.tags, {
-    Purpose = "ML training pipeline"
-    Type    = "SageMaker Pipeline"
-  })
 }

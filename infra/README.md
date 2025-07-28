@@ -166,13 +166,6 @@ Configure SNS subscriptions to receive alerts when:
 - Endpoint errors increase
 - Training jobs fail
 
-## Cost Optimization
-
-### Instance Types
-
-- **Development**: Use `ml.m5.large` for cost-effective development
-- **Production**: Consider `ml.c5.xlarge` for CPU-intensive workloads or `ml.p3.2xlarge` for GPU training
-
 ### Auto Scaling
 
 - Set appropriate `min_capacity` and `max_capacity` based on traffic patterns

@@ -2,19 +2,19 @@
 environment  = "dev"
 
 # Training Configuration
-training_instance_type    = "ml.m5.large"     # Options: ml.m5.large, ml.m5.xlarge, ml.m5.2xlarge, etc.
-processing_instance_type  = "ml.m5.large"     # Options: ml.m5.large, ml.m5.xlarge, ml.m5.2xlarge, etc.
-max_runtime_in_seconds   = 1800               # 30 min (1800 seconds)
+training_instance_type    = "ml.t2.medium"
+processing_instance_type  = "ml.t2.medium"
+max_runtime_in_seconds    = 1800
 
 # Inference Configuration
-inference_instance_type   = "ml.t3.medium"    # Options: ml.m5.large, ml.m5.xlarge, ml.c5.large, etc.
-initial_instance_count   = 1                  # Start with 1 instance
+inference_instance_type   = "ml.t2.medium"
+initial_instance_count   = 1
 
 # Auto Scaling Configuration
-min_capacity                    = 1            # Minimum instances
-max_capacity                    = 2            # Maximum instances
-target_invocations_per_instance = 100          # Scale trigger
+min_capacity                    = 1
+max_capacity                    = 2
+target_invocations_per_instance = 100
 
 # Data Capture Configuration
-enable_data_capture      = true               # Enable model monitoring
-data_capture_percentage  = 20                 # Capture 20% of requests
+enable_data_capture      = true
+data_capture_percentage  = 20

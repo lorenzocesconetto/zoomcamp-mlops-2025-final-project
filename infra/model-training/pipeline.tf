@@ -1,7 +1,7 @@
 # SageMaker Pipeline for ML training workflow
 resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
   pipeline_name         = "${var.project_name}-${var.environment}-training-pipeline"
-  pipeline_display_name = "CryptoCurrency Price Prediction Training Pipeline - ${var.environment}"
+  pipeline_display_name = "${var.project_name}-${var.environment}-training-pipeline"
   role_arn              = var.sagemaker_pipeline_role_arn
 
   pipeline_definition = jsonencode({

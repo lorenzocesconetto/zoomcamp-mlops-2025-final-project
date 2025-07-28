@@ -4,7 +4,7 @@ resource "aws_sagemaker_model" "crypto_prediction_model" {
 
   primary_container {
     image          = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
-    model_data_url = "s3://${var.model_artifacts_bucket_name}/default-model/model.tar.gz"
+    model_data_url = "s3://${var.model_artifacts_bucket_name}/default-model/model.pkl"
 
     environment = {
       "SAGEMAKER_PROGRAM"          = "inference.py"

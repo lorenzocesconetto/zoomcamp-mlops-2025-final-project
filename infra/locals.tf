@@ -12,6 +12,5 @@ locals {
     Owner       = local.owner
     Repository  = local.repository
     Environment = var.environment
-    Timestamp   = timestamp()
   }
 }

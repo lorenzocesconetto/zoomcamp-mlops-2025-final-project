@@ -81,17 +81,19 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
               }
             }
           ]
-          ProcessingOutputs = [
-            {
-              OutputName = "processed-data"
-              AppManaged = false
-              S3Output = {
-                S3Uri        = { "Get" = "Parameters.ProcessedDataUrl" }
-                LocalPath    = "/opt/ml/processing/output"
-                S3UploadMode = "EndOfJob"
+          ProcessingOutputConfig = {
+            Outputs = [
+              {
+                OutputName = "processed-data"
+                AppManaged = false
+                S3Output = {
+                  S3Uri        = { "Get" = "Parameters.ProcessedDataUrl" }
+                  LocalPath    = "/opt/ml/processing/output"
+                  S3UploadMode = "EndOfJob"
+                }
               }
-            }
-          ]
+            ]
+          }
         }
       },
       {
@@ -197,17 +199,19 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
               }
             }
           ]
-          ProcessingOutputs = [
-            {
-              OutputName = "evaluation"
-              AppManaged = false
-              S3Output = {
-                S3Uri        = "s3://${var.model_artifacts_bucket_name}/evaluation/"
-                LocalPath    = "/opt/ml/processing/evaluation"
-                S3UploadMode = "EndOfJob"
+          ProcessingOutputConfig = {
+            Outputs = [
+              {
+                OutputName = "evaluation"
+                AppManaged = false
+                S3Output = {
+                  S3Uri        = "s3://${var.model_artifacts_bucket_name}/evaluation/"
+                  LocalPath    = "/opt/ml/processing/evaluation"
+                  S3UploadMode = "EndOfJob"
+                }
               }
-            }
-          ]
+            ]
+          }
         }
         DependsOn = ["ModelTraining"]
       },

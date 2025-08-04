@@ -2,8 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from app.adapters.preprocessors.techinical_indicator_enricher import \
-    TechnicalIndicatorEnricherPreProcessor
+from app.adapters.preprocessors.techinical_indicator_enricher import (
+    TechnicalIndicatorEnricherPreProcessor,
+)
 
 
 class TestTechnicalIndicatorEnricherPreProcessor:

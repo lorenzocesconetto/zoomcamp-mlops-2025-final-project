@@ -15,9 +15,14 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
-from sklearn.metrics import (accuracy_score, classification_report,
-                             confusion_matrix, f1_score, precision_score,
-                             recall_score)
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

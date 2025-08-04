@@ -24,7 +24,9 @@ run:
 	@uv run python -m app.entrypoints.command_line.run_local
 
 lint:
-	@echo "Running linters..."
+	@echo "Running linters and formatters..."
+	@echo "Running black..."
+	@uv run black app/ tests/
 	@echo "Running isort..."
 	@uv run isort app/ tests/
 	@echo "Running flake8..."

@@ -2,6 +2,8 @@
 
 > **MLOps 2025 Final Project** - Machine Learning pipeline for predicting cryptocurrency price movements
 
+📋 **[Project Evaluation](EVALUATION.md)** - See how this project meets the MLOps course grading criteria
+
 ## Problem Statement
 
 Predicts whether a cryptocurrency price will first reach a **+x%** gain or **-x%** loss within a given timeframe (e.g., 15 minutes).

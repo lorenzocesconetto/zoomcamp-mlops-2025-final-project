@@ -58,7 +58,7 @@ resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_conf
 }
 
 resource "aws_sagemaker_endpoint" "crypto_prediction_endpoint" {
-  name                 = "${var.project_name}-${var.environment}-endpoint"
+  name                 = "${var.project_name}-${var.environment}-deploy-endpoint"
   endpoint_config_name = aws_sagemaker_endpoint_configuration.crypto_prediction_endpoint_config.name
 
   lifecycle {

@@ -2,11 +2,17 @@
 # Upload pipeline scripts to S3
 ##############################################################
 
-# Archive the entire app directory
-data "archive_file" "app_code" {
-  type        = "tar"
-  source_dir  = "${path.root}/../app"
-  output_path = "${path.root}/.terraform/app-code.tar.gz"
+# Create tar.gz archive
+resource "null_resource" "app_code_tar" {
+  triggers = {
+    # Recreate if any Python file in the app directory changes
+    app_hash = sha256(join("", [for f in fileset("${path.root}/../app", "**/*.py") : filesha256("${path.root}/../app/${f}")]))
+  }
+
+  provisioner "local-exec" {
+    command     = "tar -czf ${path.root}/.terraform/app-code.tar.gz -C ${path.root}/../app ."
+    working_dir = path.root
+  }
 }
 
 # Upload preprocessing script
@@ -41,10 +47,12 @@ resource "aws_s3_object" "inference_script" {
   etag   = filemd5("${path.root}/../app/entrypoints/sagemaker/inference.py")
 }
 
-# Upload the entire app code as a zip file for dependencies
-resource "aws_s3_object" "app_code_zip" {
+# Upload the entire app code as a tar.gz file for dependencies
+resource "aws_s3_object" "app_code_tar" {
   bucket = aws_s3_bucket.pipeline_code.bucket
   key    = "app-code.tar.gz"
-  source = data.archive_file.app_code.output_path
-  etag   = data.archive_file.app_code.output_md5
+  source = "${path.root}/.terraform/app-code.tar.gz"
+  etag   = filemd5("${path.root}/.terraform/app-code.tar.gz")
+
+  depends_on = [null_resource.app_code_tar]
 }

@@ -8,7 +8,7 @@ resource "aws_sagemaker_model" "crypto_prediction_model" {
 
     environment = {
       "SAGEMAKER_PROGRAM"          = "inference.py"
-      "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/inference.py"
+      "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/app-code.zip"
       "SAGEMAKER_REGION"           = var.aws_region
     }
   }

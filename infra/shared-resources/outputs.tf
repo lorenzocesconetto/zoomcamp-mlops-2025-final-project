@@ -70,6 +70,6 @@ output "pipeline_code_objects" {
     training      = aws_s3_object.training_script.etag
     evaluation    = aws_s3_object.evaluation_script.etag
     inference     = aws_s3_object.inference_script.etag
-    app_code      = aws_s3_object.app_code_zip.etag
+    app_code      = aws_s3_object.app_code_tar.etag
   }
 }

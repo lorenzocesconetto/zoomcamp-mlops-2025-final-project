@@ -52,7 +52,8 @@ resource "aws_s3_object" "app_code_tar" {
   bucket = aws_s3_bucket.pipeline_code.bucket
   key    = "app-code.tar.gz"
   source = "${path.root}/.terraform/app-code.tar.gz"
-  etag   = filemd5("${path.root}/.terraform/app-code.tar.gz")
+  # Use the trigger hash to force re-upload when files change
+  source_hash = null_resource.app_code_tar.triggers.app_hash
 
   depends_on = [null_resource.app_code_tar]
 }

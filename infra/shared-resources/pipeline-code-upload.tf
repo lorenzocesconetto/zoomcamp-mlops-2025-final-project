@@ -4,9 +4,9 @@
 
 # Archive the entire app directory
 data "archive_file" "app_code" {
-  type        = "zip"
+  type        = "tar"
   source_dir  = "${path.root}/../app"
-  output_path = "${path.root}/.terraform/app-code.zip"
+  output_path = "${path.root}/.terraform/app-code.tar.gz"
 }
 
 # Upload preprocessing script
@@ -44,7 +44,7 @@ resource "aws_s3_object" "inference_script" {
 # Upload the entire app code as a zip file for dependencies
 resource "aws_s3_object" "app_code_zip" {
   bucket = aws_s3_bucket.pipeline_code.bucket
-  key    = "app-code.zip"
+  key    = "app-code.tar.gz"
   source = data.archive_file.app_code.output_path
   etag   = data.archive_file.app_code.output_md5
 }

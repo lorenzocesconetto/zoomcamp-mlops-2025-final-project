@@ -8,6 +8,8 @@ on:
         type: environment
         description: Target environment
 
+# Env vars could be moved elsewhere,
+# but I'm keeping it here so it's easier for others willing to learn from this repo
 env:
   PROJECT: crypto-price-prediction
   ROLE_NAME: tf-deploy-role

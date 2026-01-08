@@ -12,6 +12,10 @@ resource "aws_sagemaker_model" "crypto_prediction_model" {
       "SAGEMAKER_REGION"           = var.aws_region
     }
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_config" {
@@ -24,6 +28,10 @@ resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_conf
     instance_type          = var.inference_instance_type
     initial_variant_weight = 1
   }
+
+  depends_on = [
+    aws_sagemaker_model.crypto_prediction_model
+  ]
 
   dynamic "data_capture_config" {
     for_each = var.enable_data_capture ? [1] : []
@@ -52,6 +60,14 @@ resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_conf
 resource "aws_sagemaker_endpoint" "crypto_prediction_endpoint" {
   name                 = "${var.project_name}-${var.environment}-endpoint"
   endpoint_config_name = aws_sagemaker_endpoint_configuration.crypto_prediction_endpoint_config.name
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [
+    aws_sagemaker_endpoint_configuration.crypto_prediction_endpoint_config
+  ]
 }
 
 resource "aws_appautoscaling_target" "sagemaker_target" {

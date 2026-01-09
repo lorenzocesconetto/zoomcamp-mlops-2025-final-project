@@ -66,10 +66,6 @@ output "aws_region" {
 output "pipeline_code_objects" {
   description = "Map of pipeline code S3 objects"
   value = {
-    preprocessing = aws_s3_object.preprocessing_script.etag
-    training      = aws_s3_object.training_script.etag
-    evaluation    = aws_s3_object.evaluation_script.etag
-    inference     = aws_s3_object.inference_script.etag
-    app_code      = aws_s3_object.app_code_tar.etag
+    app_code = aws_s3_object.app_code_tar.source_hash
   }
 }

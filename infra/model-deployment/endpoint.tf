@@ -4,11 +4,11 @@ resource "aws_sagemaker_model" "crypto_prediction_model" {
 
   primary_container {
     image          = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
-    model_data_url = "s3://${var.model_artifacts_bucket_name}/default-model/model.tar.gz"
+    model_data_url = "s3://${var.model_artifacts_bucket_name}/${var.model_data_path}"
 
     environment = {
-      "SAGEMAKER_PROGRAM"          = "entrypoints/sagemaker/inference.py"
-      "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/app-code.tar.gz"
+      "SAGEMAKER_PROGRAM"          = "inference.py"
+      "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/inference-code.tar.gz"
       "SAGEMAKER_REGION"           = var.aws_region
     }
   }

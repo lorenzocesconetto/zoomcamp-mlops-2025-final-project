@@ -101,6 +101,7 @@ module "model_deployment" {
   enable_data_capture             = var.enable_data_capture
   data_capture_percentage         = var.data_capture_percentage
   tags                            = local.common_tags
+  model_data_path                 = var.model_data_path
 
   depends_on = [module.shared_resources, module.model_tracking]
 }

@@ -72,3 +72,8 @@ variable "data_capture_percentage" {
   description = "Percentage of requests to capture"
   type        = number
 }
+
+variable "model_data_path" {
+  description = "S3 path (relative to model_artifacts_bucket) where the model.tar.gz is stored."
+  type        = string
+}

@@ -228,7 +228,7 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
                 ModelDataUrl = "s3://${var.model_artifacts_bucket_name}/training-jobs/"
                 Environment = {
                   "SAGEMAKER_PROGRAM"          = "inference.py"
-                  "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/"
+                  "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/inference-code.tar.gz"
                 }
               }
             ]

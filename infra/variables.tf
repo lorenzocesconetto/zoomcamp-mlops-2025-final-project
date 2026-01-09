@@ -124,3 +124,9 @@ variable "model_approval_status" {
     error_message = "Model approval status must be one of: Approved, Rejected, PendingManualApproval."
   }
 }
+
+variable "model_data_path" {
+  description = "Model to be used by inference service"
+  type        = string
+  default     = "default-model/model.tar.gz"
+}

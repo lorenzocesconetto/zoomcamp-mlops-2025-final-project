@@ -33,16 +33,6 @@ output "endpoint_url" {
   value       = "https://runtime.sagemaker.${var.aws_region}.amazonaws.com/endpoints/${aws_sagemaker_endpoint.crypto_prediction_endpoint.name}/invocations"
 }
 
-output "auto_scaling_target_arn" {
-  description = "ARN of the auto scaling target"
-  value       = aws_appautoscaling_target.sagemaker_target.arn
-}
-
-output "auto_scaling_policy_arn" {
-  description = "ARN of the auto scaling policy"
-  value       = aws_appautoscaling_policy.sagemaker_scaling_policy.arn
-}
-
 output "blue_green_lambda_function_name" {
   description = "Name of the blue/green deployment Lambda function"
   value       = aws_lambda_function.blue_green_deployment.function_name

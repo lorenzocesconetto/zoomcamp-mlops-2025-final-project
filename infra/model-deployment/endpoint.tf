@@ -70,33 +70,6 @@ resource "aws_sagemaker_endpoint" "crypto_prediction_endpoint" {
   ]
 }
 
-resource "aws_appautoscaling_target" "sagemaker_target" {
-  max_capacity       = var.max_capacity
-  min_capacity       = var.min_capacity
-  resource_id        = "endpoint/${aws_sagemaker_endpoint.crypto_prediction_endpoint.name}/variant/primary"
-  scalable_dimension = "sagemaker:variant:DesiredInstanceCount"
-  service_namespace  = "sagemaker"
-}
-
-resource "aws_appautoscaling_policy" "sagemaker_scaling_policy" {
-  name               = "${var.project_name}-${var.environment}-scaling-policy"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.sagemaker_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.sagemaker_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.sagemaker_target.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    target_value = var.target_invocations_per_instance
-
-    predefined_metric_specification {
-      predefined_metric_type = "SageMakerVariantInvocationsPerInstance"
-    }
-
-    scale_out_cooldown = 300 # 5 minutes
-    scale_in_cooldown  = 300 # 5 minutes
-  }
-}
-
 # Lambda function for blue/green deployments (optional)
 resource "aws_lambda_function" "blue_green_deployment" {
   filename      = "blue_green_deployment.zip"

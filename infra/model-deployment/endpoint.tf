@@ -3,7 +3,7 @@ resource "aws_sagemaker_model" "crypto_prediction_model" {
   execution_role_arn = var.sagemaker_execution_role_arn
 
   primary_container {
-    image          = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
+    image          = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.4-2-cpu-py3"
     model_data_url = "s3://${var.model_artifacts_bucket_name}/${var.model_data_path}"
 
     environment = {
@@ -58,7 +58,7 @@ resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_conf
 }
 
 resource "aws_sagemaker_endpoint" "crypto_prediction_endpoint" {
-  name                 = "${var.project_name}-${var.environment}-deploy-endpoint"
+  name                 = "${var.project_name}-${var.environment}-endpoint"
   endpoint_config_name = aws_sagemaker_endpoint_configuration.crypto_prediction_endpoint_config.name
 
   lifecycle {

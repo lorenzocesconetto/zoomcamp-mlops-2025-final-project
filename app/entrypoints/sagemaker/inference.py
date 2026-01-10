@@ -68,6 +68,7 @@ class InferenceService:
         logger.info("Model loaded successfully")
         logger.info("Model type: %s", metadata.get("model_type", "Unknown"))
         logger.info("Feature count: %s", metadata.get("feature_count", "Unknown"))
+        logger.info("Loaded feature_names (%d): %s", len(feature_names or []), feature_names)
 
         self.model_artifact = model_artifact
         return model_artifact
@@ -132,17 +133,28 @@ class InferenceService:
 
         try:
             # Ensure feature order matches training
-            if feature_names is not None:
+            if feature_names:
+                logger.info("Expected features: %s", feature_names)
+                logger.info("Received features: %s", list(input_data.columns))
+
                 # Check if all required features are present
                 missing_features = set(feature_names) - set(input_data.columns)
                 if missing_features:
                     logger.warning("Missing features: %s", missing_features)
-                    # Add missing features with default values (0)
-                    for feature in missing_features:
-                        input_data[feature] = 0.0
+                    raise ValueError("Missing features")
 
                 # Reorder columns to match training
                 input_data = input_data[feature_names]
+            else:
+                logger.warning("No feature_names available, using input features as-is")
+
+            # Ensure all data is numeric
+            logger.info("Input data shape before prediction: %s", input_data.shape)
+            logger.info("Input data dtypes: %s", input_data.dtypes.to_dict())
+
+            # Convert to numeric, coercing errors to NaN, then fill NaN with 0
+            input_data = input_data.apply(pd.to_numeric, errors="coerce").fillna(0.0)
+            logger.info("Input data shape after numeric conversion: %s", input_data.shape)
 
             # Make predictions
             predictions = model.predict(input_data)

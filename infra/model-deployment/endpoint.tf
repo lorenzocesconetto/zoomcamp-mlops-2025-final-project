@@ -1,5 +1,11 @@
+# Use first 8 chars of inference code hash for readable unique suffix
+locals {
+  inference_code_suffix = substr(var.inference_code_hash, 0, 8)
+}
+
 resource "aws_sagemaker_model" "crypto_prediction_model" {
-  name               = "${var.project_name}-${var.environment}-model"
+  # Include hash in name to force recreation when inference code changes
+  name               = "${var.project_name}-${var.environment}-model-${local.inference_code_suffix}"
   execution_role_arn = var.sagemaker_execution_role_arn
 
   primary_container {
@@ -19,7 +25,8 @@ resource "aws_sagemaker_model" "crypto_prediction_model" {
 }
 
 resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_config" {
-  name = "${var.project_name}-${var.environment}-endpoint-config"
+  # Include hash in name to force recreation when inference code changes
+  name = "${var.project_name}-${var.environment}-endpoint-config-${local.inference_code_suffix}"
 
   production_variants {
     variant_name           = "primary"

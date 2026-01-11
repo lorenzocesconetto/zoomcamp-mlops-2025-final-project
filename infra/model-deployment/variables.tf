@@ -77,3 +77,8 @@ variable "model_data_path" {
   description = "S3 path (relative to model_artifacts_bucket) where the model.tar.gz is stored."
   type        = string
 }
+
+variable "inference_code_hash" {
+  description = "Hash of the inference code for change detection"
+  type        = string
+}

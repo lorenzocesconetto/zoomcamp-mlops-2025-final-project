@@ -102,6 +102,7 @@ module "model_deployment" {
   data_capture_percentage         = var.data_capture_percentage
   tags                            = local.common_tags
   model_data_path                 = var.model_data_path
+  inference_code_hash             = module.shared_resources.inference_code_hash
 
   depends_on = [module.shared_resources, module.model_tracking]
 }

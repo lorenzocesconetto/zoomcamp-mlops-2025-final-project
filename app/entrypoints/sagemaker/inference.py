@@ -11,7 +11,6 @@ import json
 import logging
 import os
 import pickle
-from io import StringIO
 from typing import Any, Dict, List, Optional, TypedDict
 
 import numpy as np
@@ -74,51 +73,42 @@ class InferenceService:
         return model_artifact
 
     def parse_input(
-        self, request_body: str, request_content_type: str = "application/json"
+        self, request_body: str, req_content_type: str = "application/json"
     ) -> pd.DataFrame:
-        """Parse input data for prediction."""
-        logger.info("Parsing input with content type: %s", request_content_type)
+        """Parse JSON input data for prediction."""
+        logger.info("Parsing input with content type: %s", req_content_type)
 
-        if request_content_type == "application/json":
-            try:
-                input_data = json.loads(request_body)
+        if req_content_type != "application/json":
+            raise ValueError(
+                f"Unsupported content type: {req_content_type}."
+                " Only application/json is supported."
+            )
 
-                # Handle different input formats
-                if "instances" in input_data:
-                    # Format: {"instances": [...]}
-                    instances = input_data["instances"]
-                elif "data" in input_data:
-                    # Format: {"data": [...]}
-                    instances = input_data["data"]
-                elif isinstance(input_data, list):
-                    # Format: [...]
-                    instances = input_data
-                else:
-                    # Assume the entire payload is a single instance
-                    instances = [input_data]
+        try:
+            input_data = json.loads(request_body)
 
-                # Convert to DataFrame
-                df = pd.DataFrame(instances)
-                logger.info("Parsed %d instances with %d features", len(df), len(df.columns))
+            # Handle different input formats
+            if "instances" in input_data:
+                # Format: {"instances": [...]}
+                instances = input_data["instances"]
+            elif "data" in input_data:
+                # Format: {"data": [...]}
+                instances = input_data["data"]
+            elif isinstance(input_data, list):
+                # Format: [...]
+                instances = input_data
+            else:
+                # Assume the entire payload is a single instance
+                instances = [input_data]
 
-                return df
+            # Convert to DataFrame
+            df = pd.DataFrame(instances)
+            logger.info("Parsed %d instances with %d features", len(df), len(df.columns))
 
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON in request body: {str(e)}")
+            return df
 
-        elif request_content_type == "text/csv":
-            try:
-                # Parse CSV data
-                df = pd.read_csv(StringIO(request_body))
-                logger.info(
-                    "Parsed CSV with %d instances and %d features", len(df), len(df.columns)
-                )
-                return df
-            except Exception as e:
-                raise ValueError(f"Invalid CSV in request body: {str(e)}")
-
-        else:
-            raise ValueError(f"Unsupported content type: {request_content_type}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in request body: {str(e)}")
 
     def predict(self, input_data: pd.DataFrame) -> Dict[str, Any]:
         """Make predictions using the loaded model."""
@@ -140,21 +130,39 @@ class InferenceService:
                 # Check if all required features are present
                 missing_features = set(feature_names) - set(input_data.columns)
                 if missing_features:
-                    logger.warning("Missing features: %s", missing_features)
-                    raise ValueError("Missing features")
+                    raise ValueError(
+                        f"Missing required features: {sorted(missing_features)}. "
+                        f"Expected {len(feature_names)} features."
+                    )
 
                 # Reorder columns to match training
                 input_data = input_data[feature_names]
             else:
                 logger.warning("No feature_names available, using input features as-is")
 
-            # Ensure all data is numeric
-            logger.info("Input data shape before prediction: %s", input_data.shape)
-            logger.info("Input data dtypes: %s", input_data.dtypes.to_dict())
+            # Validate all values are numeric
+            numeric_data = input_data.apply(pd.to_numeric, errors="coerce")
 
-            # Convert to numeric, coercing errors to NaN, then fill NaN with 0
-            input_data = input_data.apply(pd.to_numeric, errors="coerce").fillna(0.0)
-            logger.info("Input data shape after numeric conversion: %s", input_data.shape)
+            # Check for non-numeric values
+            non_numeric_mask = input_data.notna() & numeric_data.isna()
+            if non_numeric_mask.any().any():
+                non_numeric_cols = non_numeric_mask.any()
+                bad_columns = list(non_numeric_cols[non_numeric_cols].index)
+                raise ValueError(
+                    f"Non-numeric values found in features: {bad_columns}. "
+                    "All feature values must be numeric."
+                )
+
+            # Check for null/NaN values
+            if numeric_data.isna().any().any():
+                null_cols = numeric_data.isna().any()
+                bad_columns = list(null_cols[null_cols].index)
+                raise ValueError(
+                    f"Null or NaN values found in features: {bad_columns}. "
+                    "All feature values must be provided."
+                )
+
+            input_data = numeric_data
 
             # Make predictions
             predictions = model.predict(input_data)
@@ -183,34 +191,9 @@ class InferenceService:
             logger.error("Prediction failed: %s", str(e))
             raise ValueError(f"Prediction error: {str(e)}")
 
-    def format_output(self, prediction: Dict[str, Any], accept: str = "application/json") -> str:
-        """Format the prediction output."""
-        logger.info("Formatting output with accept type: %s", accept)
-
-        if accept == "application/json":
-            return json.dumps(prediction)
-
-        elif accept == "text/csv":
-            # Convert predictions to CSV format
-            predictions_df = pd.DataFrame(
-                {
-                    "prediction": prediction["predictions"],
-                    "probability_class_0": [
-                        p[0] if len(p) > 0 else 0 for p in prediction["probabilities"]
-                    ],
-                    "probability_class_1": [
-                        p[1] if len(p) > 1 else 0 for p in prediction["probabilities"]
-                    ],
-                    "probability_class_2": [
-                        p[2] if len(p) > 2 else 0 for p in prediction["probabilities"]
-                    ],
-                }
-            )
-            return predictions_df.to_csv(index=False)
-
-        else:
-            # Default to JSON
-            return json.dumps(prediction)
+    def format_output(self, prediction: Dict[str, Any]) -> str:
+        """Format the prediction output as JSON."""
+        return json.dumps(prediction)
 
 
 # Global inference service instance for SageMaker
@@ -221,27 +204,45 @@ _inference_service: Optional[InferenceService] = None
 def model_fn(model_dir: str) -> InferenceService:
     """Load the model for SageMaker inference."""
     global _inference_service
-    _inference_service = InferenceService()
-    _inference_service.load_model(model_dir)
-    return _inference_service
+    try:
+        _inference_service = InferenceService()
+        _inference_service.load_model(model_dir)
+        return _inference_service
+    except Exception as e:
+        logger.error("Failed to load model: %s", str(e))
+        raise
 
 
 def input_fn(request_body: str, request_content_type: str = "application/json") -> pd.DataFrame:
     """Parse input data for SageMaker prediction."""
-    # Use the global service if available, otherwise create a temporary one
-    service = _inference_service if _inference_service else InferenceService()
-    return service.parse_input(request_body, request_content_type)
+    try:
+        service = _inference_service if _inference_service else InferenceService()
+        return service.parse_input(request_body, request_content_type)
+    except Exception as e:
+        logger.error("Failed to parse input: %s", str(e))
+        raise ValueError(f"Input parsing error: {str(e)}")
 
 
 def predict_fn(input_data: pd.DataFrame, model: InferenceService) -> Dict[str, Any]:
     """Make predictions for SageMaker."""
-    return model.predict(input_data)
+    try:
+        return model.predict(input_data)
+    except Exception as e:
+        logger.error("Prediction failed in predict_fn: %s", str(e))
+        # Return error as a dict that will be serialized to JSON
+        return {
+            "error": True,
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "predictions": [],
+            "probabilities": [],
+        }
 
 
-def output_fn(prediction: Dict[str, Any], accept: str = "application/json") -> str:
-    """Format output for SageMaker."""
+def output_fn(prediction: Dict[str, Any], _accept: str = "application/json") -> str:
+    """Format output for SageMaker as JSON."""
     service = _inference_service if _inference_service else InferenceService()
-    return service.format_output(prediction, accept)
+    return service.format_output(prediction)
 
 
 # Export the SageMaker handler functions

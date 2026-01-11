@@ -1,21 +1,32 @@
+# Use first 8 chars of inference code hash for readable unique suffix
+locals {
+  inference_code_suffix = substr(var.inference_code_hash, 0, 8)
+}
+
 resource "aws_sagemaker_model" "crypto_prediction_model" {
-  name               = "${var.project_name}-${var.environment}-model"
+  # Include hash in name to force recreation when inference code changes
+  name               = "${var.project_name}-${var.environment}-model-${local.inference_code_suffix}"
   execution_role_arn = var.sagemaker_execution_role_arn
 
   primary_container {
-    image          = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
-    model_data_url = "s3://${var.model_artifacts_bucket_name}/default-model/model.tar.gz"
+    image          = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.4-2-cpu-py3"
+    model_data_url = "s3://${var.model_artifacts_bucket_name}/${var.model_data_path}"
 
     environment = {
       "SAGEMAKER_PROGRAM"          = "inference.py"
-      "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/inference.py"
+      "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/inference-code.tar.gz"
       "SAGEMAKER_REGION"           = var.aws_region
     }
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
 resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_config" {
-  name = "${var.project_name}-${var.environment}-endpoint-config"
+  # Include hash in name to force recreation when inference code changes
+  name = "${var.project_name}-${var.environment}-endpoint-config-${local.inference_code_suffix}"
 
   production_variants {
     variant_name           = "primary"
@@ -24,6 +35,10 @@ resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_conf
     instance_type          = var.inference_instance_type
     initial_variant_weight = 1
   }
+
+  depends_on = [
+    aws_sagemaker_model.crypto_prediction_model
+  ]
 
   dynamic "data_capture_config" {
     for_each = var.enable_data_capture ? [1] : []
@@ -52,33 +67,14 @@ resource "aws_sagemaker_endpoint_configuration" "crypto_prediction_endpoint_conf
 resource "aws_sagemaker_endpoint" "crypto_prediction_endpoint" {
   name                 = "${var.project_name}-${var.environment}-endpoint"
   endpoint_config_name = aws_sagemaker_endpoint_configuration.crypto_prediction_endpoint_config.name
-}
 
-resource "aws_appautoscaling_target" "sagemaker_target" {
-  max_capacity       = var.max_capacity
-  min_capacity       = var.min_capacity
-  resource_id        = "endpoint/${aws_sagemaker_endpoint.crypto_prediction_endpoint.name}/variant/primary"
-  scalable_dimension = "sagemaker:variant:DesiredInstanceCount"
-  service_namespace  = "sagemaker"
-}
-
-resource "aws_appautoscaling_policy" "sagemaker_scaling_policy" {
-  name               = "${var.project_name}-${var.environment}-scaling-policy"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.sagemaker_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.sagemaker_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.sagemaker_target.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    target_value = var.target_invocations_per_instance
-
-    predefined_metric_specification {
-      predefined_metric_type = "SageMakerVariantInvocationsPerInstance"
-    }
-
-    scale_out_cooldown = 300 # 5 minutes
-    scale_in_cooldown  = 300 # 5 minutes
+  lifecycle {
+    create_before_destroy = true
   }
+
+  depends_on = [
+    aws_sagemaker_endpoint_configuration.crypto_prediction_endpoint_config
+  ]
 }
 
 # Lambda function for blue/green deployments (optional)
@@ -96,10 +92,6 @@ resource "aws_lambda_function" "blue_green_deployment" {
       MODEL_PACKAGE_GROUP_NAME = var.model_package_group_name
     }
   }
-
-  tags = merge(var.tags, {
-    Purpose = "Blue/Green deployment automation"
-  })
 }
 
 # IAM role for Lambda function
@@ -118,8 +110,6 @@ resource "aws_iam_role" "lambda_execution_role" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 # IAM policy for Lambda function
@@ -166,8 +156,6 @@ resource "aws_iam_policy" "lambda_sagemaker_policy" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_sagemaker_policy" {

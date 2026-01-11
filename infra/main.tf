@@ -71,7 +71,7 @@ module "model_training" {
   processed_data_bucket_name   = module.shared_resources.processed_data_bucket_name
   model_artifacts_bucket_name  = module.shared_resources.model_artifacts_bucket_name
   pipeline_code_bucket_name    = module.shared_resources.pipeline_code_bucket_name
-  experiment_name              = module.model_tracking.experiment_name
+  experiment_name              = local.experiment_name
   model_package_group_name     = module.model_tracking.model_package_group_name
   training_instance_type       = var.training_instance_type
   processing_instance_type     = var.processing_instance_type
@@ -101,6 +101,8 @@ module "model_deployment" {
   enable_data_capture             = var.enable_data_capture
   data_capture_percentage         = var.data_capture_percentage
   tags                            = local.common_tags
+  model_data_path                 = var.model_data_path
+  inference_code_hash             = module.shared_resources.inference_code_hash
 
   depends_on = [module.shared_resources, module.model_tracking]
 }

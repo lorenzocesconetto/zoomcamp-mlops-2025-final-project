@@ -2,49 +2,53 @@
 # Upload pipeline scripts to S3
 ##############################################################
 
-# Archive the entire app directory
-data "archive_file" "app_code" {
-  type        = "zip"
-  source_dir  = "${path.root}/../app"
-  output_path = "${path.root}/.terraform/app-code.zip"
+# Create tar.gz archive for the full app code (used by training/preprocessing jobs)
+resource "null_resource" "app_code_tar" {
+  triggers = {
+    # Recreate if any Python file in the app directory changes
+    app_hash = sha256(join("", [for f in fileset("${path.root}/../app", "**/*.py") : filesha256("${path.root}/../app/${f}")]))
+  }
+
+  provisioner "local-exec" {
+    command     = "tar -czf ${path.root}/.terraform/app-code.tar.gz -C ${path.root}/../app ."
+    working_dir = path.root
+  }
 }
 
-# Upload preprocessing script
-resource "aws_s3_object" "preprocessing_script" {
+# Upload the entire app code as a tar.gz file
+resource "aws_s3_object" "app_code_tar" {
   bucket = aws_s3_bucket.pipeline_code.bucket
-  key    = "preprocessing.py"
-  source = "${path.root}/../app/entrypoints/sagemaker/preprocessing.py"
-  etag   = filemd5("${path.root}/../app/entrypoints/sagemaker/preprocessing.py")
+  key    = "app-code.tar.gz"
+  source = "${path.root}/.terraform/app-code.tar.gz"
+  # Use the trigger hash to force re-upload when files change
+  source_hash = null_resource.app_code_tar.triggers.app_hash
+
+  depends_on = [null_resource.app_code_tar]
 }
 
-# Upload training script
-resource "aws_s3_object" "training_script" {
-  bucket = aws_s3_bucket.pipeline_code.bucket
-  key    = "train.py"
-  source = "${path.root}/../app/entrypoints/sagemaker/train.py"
-  etag   = filemd5("${path.root}/../app/entrypoints/sagemaker/train.py")
+##############################################################
+# Upload inference script separately for SageMaker endpoint
+##############################################################
+# Create tar.gz archive for the inference script only
+resource "null_resource" "inference_code_tar" {
+  triggers = {
+    # Recreate if the inference script changes
+    inference_hash = filesha256("${path.root}/../app/entrypoints/sagemaker/inference.py")
+  }
+
+  provisioner "local-exec" {
+    command     = "tar -czf ${path.root}/.terraform/inference-code.tar.gz -C ${path.root}/../app/entrypoints/sagemaker inference.py"
+    working_dir = path.root
+  }
 }
 
-# Upload evaluation script
-resource "aws_s3_object" "evaluation_script" {
+# Upload the inference code as a tar.gz file
+resource "aws_s3_object" "inference_code_tar" {
   bucket = aws_s3_bucket.pipeline_code.bucket
-  key    = "evaluate.py"
-  source = "${path.root}/../app/entrypoints/sagemaker/evaluate.py"
-  etag   = filemd5("${path.root}/../app/entrypoints/sagemaker/evaluate.py")
-}
+  key    = "inference-code.tar.gz"
+  source = "${path.root}/.terraform/inference-code.tar.gz"
+  # Use the trigger hash to force re-upload when the script changes
+  source_hash = null_resource.inference_code_tar.triggers.inference_hash
 
-# Upload inference script
-resource "aws_s3_object" "inference_script" {
-  bucket = aws_s3_bucket.pipeline_code.bucket
-  key    = "inference.py"
-  source = "${path.root}/../app/entrypoints/sagemaker/inference.py"
-  etag   = filemd5("${path.root}/../app/entrypoints/sagemaker/inference.py")
-}
-
-# Upload the entire app code as a zip file for dependencies
-resource "aws_s3_object" "app_code_zip" {
-  bucket = aws_s3_bucket.pipeline_code.bucket
-  key    = "app-code.zip"
-  source = data.archive_file.app_code.output_path
-  etag   = data.archive_file.app_code.output_md5
+  depends_on = [null_resource.inference_code_tar]
 }

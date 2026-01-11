@@ -8,6 +8,8 @@ on:
         type: environment
         description: Target environment
 
+# Env vars could be moved elsewhere,
+# but I'm keeping it here so it's easier for others willing to learn from this repo
 env:
   PROJECT: crypto-price-prediction
   ROLE_NAME: tf-deploy-role
@@ -32,7 +34,7 @@ jobs:
         run: uv sync --locked --all-extras
 
       - name: Execute lint (isort)
-        run: uv run isort --check-only --diff app/ tests/
+        run: uv run isort --check-only --diff --profile black app/ tests/
 
       - name: Execute lint (flake8)
         run: uv run flake8 app/ tests/

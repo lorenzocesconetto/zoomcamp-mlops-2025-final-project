@@ -1,7 +1,7 @@
 # SageMaker Pipeline for ML training workflow
 resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
   pipeline_name         = "${var.project_name}-${var.environment}-training-pipeline"
-  pipeline_display_name = "CryptoCurrency Price Prediction Training Pipeline - ${var.environment}"
+  pipeline_display_name = "${var.project_name}-${var.environment}-training-pipeline"
   role_arn              = var.sagemaker_pipeline_role_arn
 
   pipeline_definition = jsonencode({
@@ -43,13 +43,13 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
         Arguments = {
           ProcessingResources = {
             ClusterConfig = {
-              InstanceType   = { Get = "Parameters.ProcessingInstanceType" }
+              InstanceType   = { "Get" = "Parameters.ProcessingInstanceType" }
               InstanceCount  = 1
               VolumeSizeInGB = 30
             }
           }
           AppSpecification = {
-            ImageUri = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
+            ImageUri = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
             ContainerEntrypoint = [
               "python3", "/opt/ml/processing/code/preprocessing.py"
             ]
@@ -60,7 +60,7 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
               InputName  = "raw-data"
               AppManaged = false
               S3Input = {
-                S3Uri                  = { Get = "Parameters.InputDataUrl" }
+                S3Uri                  = { "Get" = "Parameters.InputDataUrl" }
                 LocalPath              = "/opt/ml/processing/input"
                 S3DataType             = "S3Prefix"
                 S3InputMode            = "File"
@@ -81,17 +81,19 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
               }
             }
           ]
-          ProcessingOutputs = [
-            {
-              OutputName = "processed-data"
-              AppManaged = false
-              S3Output = {
-                S3Uri        = { Get = "Parameters.ProcessedDataUrl" }
-                LocalPath    = "/opt/ml/processing/output"
-                S3UploadMode = "EndOfJob"
+          ProcessingOutputConfig = {
+            Outputs = [
+              {
+                OutputName = "processed-data"
+                AppManaged = false
+                S3Output = {
+                  S3Uri        = { "Get" = "Parameters.ProcessedDataUrl" }
+                  LocalPath    = "/opt/ml/processing/output"
+                  S3UploadMode = "EndOfJob"
+                }
               }
-            }
-          ]
+            ]
+          }
         }
       },
       {
@@ -99,7 +101,7 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
         Type = "Training"
         Arguments = {
           AlgorithmSpecification = {
-            TrainingImage     = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
+            TrainingImage     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
             TrainingInputMode = "File"
           }
           InputDataConfig = [
@@ -108,7 +110,7 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
               DataSource = {
                 S3DataSource = {
                   S3DataType             = "S3Prefix"
-                  S3Uri                  = { Get = "Steps.DataProcessing.ProcessingOutputs['processed-data'].S3Output.S3Uri" }
+                  S3Uri                  = { "Get" = "Parameters.ProcessedDataUrl" }
                   S3DataDistributionType = "FullyReplicated"
                 }
               }
@@ -120,7 +122,7 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
             S3OutputPath = "s3://${var.model_artifacts_bucket_name}/training-jobs/"
           }
           ResourceConfig = {
-            InstanceType   = { Get = "Parameters.TrainingInstanceType" }
+            InstanceType   = { "Get" = "Parameters.TrainingInstanceType" }
             InstanceCount  = 1
             VolumeSizeInGB = 30
           }
@@ -135,12 +137,8 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
           }
           Environment = {
             "SAGEMAKER_PROGRAM"          = "train.py"
-            "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/train.py"
+            "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/"
             "SAGEMAKER_REGION"           = var.aws_region
-          }
-          ExperimentConfig = {
-            ExperimentName = var.experiment_name
-            TrialName      = "${var.project_name}-${var.environment}-trial-{{'$$'}}{{{'workflow.parameters.executionId'}}"
           }
         }
         DependsOn = ["DataProcessing"]
@@ -151,13 +149,13 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
         Arguments = {
           ProcessingResources = {
             ClusterConfig = {
-              InstanceType   = { Get = "Parameters.ProcessingInstanceType" }
+              InstanceType   = { "Get" = "Parameters.ProcessingInstanceType" }
               InstanceCount  = 1
               VolumeSizeInGB = 30
             }
           }
           AppSpecification = {
-            ImageUri = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
+            ImageUri = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
             ContainerEntrypoint = [
               "python3", "/opt/ml/processing/code/evaluate.py"
             ]
@@ -168,7 +166,7 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
               InputName  = "model"
               AppManaged = false
               S3Input = {
-                S3Uri                  = { Get = "Steps.ModelTraining.ModelArtifacts.S3ModelArtifacts" }
+                S3Uri                  = "s3://${var.model_artifacts_bucket_name}/training-jobs/"
                 LocalPath              = "/opt/ml/processing/model"
                 S3DataType             = "S3Prefix"
                 S3InputMode            = "File"
@@ -180,7 +178,7 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
               InputName  = "test-data"
               AppManaged = false
               S3Input = {
-                S3Uri                  = { Get = "Steps.DataProcessing.ProcessingOutputs['processed-data'].S3Output.S3Uri" }
+                S3Uri                  = { "Get" = "Parameters.ProcessedDataUrl" }
                 LocalPath              = "/opt/ml/processing/test"
                 S3DataType             = "S3Prefix"
                 S3InputMode            = "File"
@@ -201,17 +199,19 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
               }
             }
           ]
-          ProcessingOutputs = [
-            {
-              OutputName = "evaluation"
-              AppManaged = false
-              S3Output = {
-                S3Uri        = "s3://${var.model_artifacts_bucket_name}/evaluation/"
-                LocalPath    = "/opt/ml/processing/evaluation"
-                S3UploadMode = "EndOfJob"
+          ProcessingOutputConfig = {
+            Outputs = [
+              {
+                OutputName = "evaluation"
+                AppManaged = false
+                S3Output = {
+                  S3Uri        = "s3://${var.model_artifacts_bucket_name}/evaluation/"
+                  LocalPath    = "/opt/ml/processing/evaluation"
+                  S3UploadMode = "EndOfJob"
+                }
               }
-            }
-          ]
+            ]
+          }
         }
         DependsOn = ["ModelTraining"]
       },
@@ -220,15 +220,15 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
         Type = "RegisterModel"
         Arguments = {
           ModelPackageGroupName = var.model_package_group_name
-          ModelApprovalStatus   = { Get = "Parameters.ModelApprovalStatus" }
+          ModelApprovalStatus   = { "Get" = "Parameters.ModelApprovalStatus" }
           InferenceSpecification = {
             Containers = [
               {
-                Image        = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
-                ModelDataUrl = { Get = "Steps.ModelTraining.ModelArtifacts.S3ModelArtifacts" }
+                Image        = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3"
+                ModelDataUrl = "s3://${var.model_artifacts_bucket_name}/training-jobs/"
                 Environment = {
                   "SAGEMAKER_PROGRAM"          = "inference.py"
-                  "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/inference.py"
+                  "SAGEMAKER_SUBMIT_DIRECTORY" = "s3://${var.pipeline_code_bucket_name}/inference-code.tar.gz"
                 }
               }
             ]
@@ -239,7 +239,7 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
             ModelQuality = {
               Statistics = {
                 ContentType = "application/json"
-                S3Uri       = { Get = "Steps.ModelEvaluation.ProcessingOutputs['evaluation'].S3Output.S3Uri" }
+                S3Uri       = "s3://${var.model_artifacts_bucket_name}/evaluation/evaluation.json"
               }
             }
           }
@@ -247,10 +247,5 @@ resource "aws_sagemaker_pipeline" "crypto_prediction_pipeline" {
         DependsOn = ["ModelEvaluation"]
       }
     ]
-  })
-
-  tags = merge(var.tags, {
-    Purpose = "ML training pipeline"
-    Type    = "SageMaker Pipeline"
   })
 }

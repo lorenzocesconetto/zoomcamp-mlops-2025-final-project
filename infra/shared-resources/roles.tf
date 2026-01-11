@@ -16,8 +16,6 @@ resource "aws_iam_role" "sagemaker_execution_role" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "sagemaker_execution_policy" {
@@ -53,8 +51,6 @@ resource "aws_iam_role" "sagemaker_pipeline_role" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "sagemaker_pipeline_policy" {

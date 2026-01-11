@@ -39,9 +39,15 @@ warn_unused_ignores = true
 show_error_codes = true
 
 [tool.flake8]
-exclude = ["tmp*"]
 max-line-length = 99
-ignore = ["E203"]
+ignore = ["E203", "W503"]
+
+[tool.isort]
+profile = "black"
+line_length = 99
+
+[tool.black]
+line-length = 99
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -10,10 +10,11 @@ variable "environment" {
 }
 
 # Training Configuration
+# Some other available options are: ml.t2.medium, ml.t2.large, ml.t2.xlarge, ml.t2.2xlarge, ml.m4.xlarge, ml.m4.2xlarge, ml.m4.4xlarge, ml.m4.10xlarge, ml.m4.16xlarge, ml.m5.large, ml.m5.xlarge, ml.m5.2xlarge, ml.m5.4xlarge, ml.m5.12xlarge, ml.m5.24xlarge, etc
 variable "training_instance_type" {
   description = "Instance type for training jobs"
   type        = string
-  default     = "ml.m5.large"
+  default     = "ml.t2.medium"
   validation {
     condition     = can(regex("^ml\\.", var.training_instance_type))
     error_message = "Training instance type must be a valid SageMaker ML instance type."
@@ -23,7 +24,7 @@ variable "training_instance_type" {
 variable "processing_instance_type" {
   description = "Instance type for processing jobs"
   type        = string
-  default     = "ml.m5.large"
+  default     = "ml.t2.medium"
   validation {
     condition     = can(regex("^ml\\.", var.processing_instance_type))
     error_message = "Processing instance type must be a valid SageMaker ML instance type."
@@ -44,7 +45,7 @@ variable "max_runtime_in_seconds" {
 variable "inference_instance_type" {
   description = "Instance type for inference endpoints"
   type        = string
-  default     = "ml.t3.medium"
+  default     = "ml.t2.medium"
   validation {
     condition     = can(regex("^ml\\.", var.inference_instance_type))
     error_message = "Inference instance type must be a valid SageMaker ML instance type."
@@ -122,4 +123,10 @@ variable "model_approval_status" {
     ], var.model_approval_status)
     error_message = "Model approval status must be one of: Approved, Rejected, PendingManualApproval."
   }
+}
+
+variable "model_data_path" {
+  description = "Model to be used by inference service"
+  type        = string
+  default     = "default-model/model.tar.gz"
 }

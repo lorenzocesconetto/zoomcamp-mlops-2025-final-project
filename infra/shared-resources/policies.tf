@@ -54,8 +54,6 @@ resource "aws_iam_policy" "sagemaker_s3_policy" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 resource "aws_iam_policy" "sagemaker_pipeline_policy" {
@@ -107,6 +105,4 @@ resource "aws_iam_policy" "sagemaker_pipeline_policy" {
       }
     ]
   })
-
-  tags = var.tags
 }

@@ -66,10 +66,17 @@ output "aws_region" {
 output "pipeline_code_objects" {
   description = "Map of pipeline code S3 objects"
   value = {
-    preprocessing = aws_s3_object.preprocessing_script.etag
-    training      = aws_s3_object.training_script.etag
-    evaluation    = aws_s3_object.evaluation_script.etag
-    inference     = aws_s3_object.inference_script.etag
-    app_code      = aws_s3_object.app_code_zip.etag
+    app_code       = aws_s3_object.app_code_tar.source_hash
+    inference_code = aws_s3_object.inference_code_tar.source_hash
   }
+}
+
+output "inference_code_s3_uri" {
+  description = "S3 URI of the inference code tar.gz"
+  value       = "s3://${aws_s3_bucket.pipeline_code.bucket}/${aws_s3_object.inference_code_tar.key}"
+}
+
+output "inference_code_hash" {
+  description = "Hash of the inference code for change detection"
+  value       = aws_s3_object.inference_code_tar.source_hash
 }
